@@ -11,9 +11,9 @@ namespace Fall
         static double RadDeg = Math.PI / 180.0;
         public static double distance;
         public static double Bt;
-        public static double Q, eas, pLift, pDrag, lift, liftUp, drag = 0;
+        static double Q, eas, pLift, pDrag, lift, liftUp, drag = 0;
         bool showWindow = true;
-        public static Rect windowPos = new Rect(100, 100, 0, 0);
+        static Rect windowPos = new Rect(100, 100, 0, 0);
 
         static Vessel Ship = FlightGlobals.ActiveVessel;
         static CelestialBody body = Ship.mainBody;
@@ -29,7 +29,7 @@ namespace Fall
             return P / (T * R);
         }
 
-        public static void GetAeroStats(Vessel v, out double thrust, out double maxThrust, out double maxFuelFlow, out double CdS)  //adapted from AeroGUI by Nathankell - 2015
+        static void GetAeroStats(Vessel v, out double thrust, out double maxThrust, out double maxFuelFlow, out double CdS)  //adapted from AeroGUI by Nathankell - 2015
         {
             Vector3d nVel = v.srf_velocity.normalized;
             thrust = maxThrust = maxFuelFlow = 0;
@@ -129,7 +129,7 @@ namespace Fall
             Bt = 0;
         }
 
-        public void OnGUI()
+        void OnGUI()
         {
             if (showWindow)
                 windowPos = GUILayout.Window("Fall".GetHashCode(), windowPos, DrawWindow, "FallDown");
@@ -141,11 +141,11 @@ namespace Fall
             Bt = 0;
             LS.latitude = Ship.latitude;  // acceptable in case of vertical descent
             LS.longitude = Ship.longitude; // acceptable in case of vertical descent
+            LS.altitude = body.TerrainAltitude(LS.latitude, LS.longitude, true);
+
             double CdS = 1.0;
             double Thrust, maxT, maxFF = 0;
             GetAeroStats(Ship, out Thrust, out maxT, out maxFF, out CdS);
-
-            LS.altitude = body.TerrainAltitude(LS.latitude, LS.longitude, true);
 
             double G, D, Tv, oldD = 0;
             do
@@ -160,7 +160,7 @@ namespace Fall
             } while (Math.Abs(distance-oldD) > 0.1);
         }
 
-        public void DrawWindow(int windowID)
+        void DrawWindow(int windowID)
         {
             // Enable closing of the window with "x"
             GUIStyle buttonStyle = new GUIStyle(GUI.skin.button);
