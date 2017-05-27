@@ -151,7 +151,6 @@ namespace Fall
             double Reynolds_Sv, Reynolds_Tv = 1.0;  // Reynolds numbers for the current and terminal speed
             Gg = gravity(body.gravParameter, body.Radius + LS.altitude);
             Sv = Ship.srf_velocity.magnitude;
-            Reynolds_Sv = PhysicsGlobals.DragCurvePseudoReynolds.Evaluate((float)(D * Sv));
             do
             {  /* with altitude, compute air density and gravity, then terminalVelocity; burntime is what required for forces on craft (thrust, drag, - gravity) to stop it.
                   at terminal velocity, drag deceleration = gravity; at 0 speed, drag deceleration is nil; drag +gravity can then be averaged as 1/2 gravity;
@@ -163,6 +162,7 @@ namespace Fall
                 D = density(body.GetPressure(LS.altitude + distance), body.GetTemperature(LS.altitude + distance) + atmTempOffset(), 
                     PhysicsGlobals.IdealGasConstant / body.atmosphereMolarMass);
                 Tv = Math.Sqrt(2 * (Ship.totalMass - maxFF * Bt) * Gg / (D * CdS));
+                Reynolds_Sv = PhysicsGlobals.DragCurvePseudoReynolds.Evaluate((float)(D * Sv));
                 Reynolds_Tv = PhysicsGlobals.DragCurvePseudoReynolds.Evaluate((float)(D * Tv));
                 avgAcc = maxT / 2 * (1 / Ship.totalMass + 1 / (Ship.totalMass - maxFF * Bt)) + Gz*Sv*Sv*Reynolds_Sv/(Tv*Tv*Reynolds_Tv) / 3 - (Gz + Gg) / 2;
                 Bt = Sv / avgAcc;
