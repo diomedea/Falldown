@@ -147,7 +147,7 @@ namespace Fall
             double Thrust, maxT, maxFF = 0;
             GetAeroStats(Ship, out Thrust, out maxT, out maxFF, out CdS);
 
-            double Gg, Gz, D, Tv, oldD = 0;  // gravity at ground, gravity at altitude, air density, terminal velocity, previous distance
+            double Gg, Gz, D, Tv, avgAcc, oldD = 0;  // gravity at ground, gravity at altitude, air density, terminal velocity, previous distance
             Gg = gravity(body.gravParameter, body.Radius + LS.altitude);
             do
             {  /* with altitude, compute air density and gravity, then terminalVelocity; burntime is what required for forces on craft (thrust, drag, - gravity) to stop it.
@@ -159,9 +159,10 @@ namespace Fall
                 D = density(body.GetPressure(LS.altitude + distance), body.GetTemperature(LS.altitude + distance) + atmTempOffset(), 
                     PhysicsGlobals.IdealGasConstant / body.atmosphereMolarMass);
                 Tv = Math.Sqrt(2 * (Ship.totalMass-maxFF*Bt) * Gg / (D * CdS));
-                Bt = Tv / (maxT/2*(1/Ship.totalMass +1/(Ship.totalMass- maxFF*Bt)) + Gz/3 - (Gz+Gg)/2);
+                avgAcc = maxT / 2 * (1 / Ship.totalMass + 1 / (Ship.totalMass - maxFF * Bt)) + Gz / 3 - (Gz + Gg) / 2;
+                Bt = Tv / avgAcc;
                 oldD = distance;
-                distance = 0.5 * (maxT - Gg) * Bt * Bt;  // note: only valid for vertical descents with thrust oriented against gravity; would require vector sum of maxT, G to compute vector distance
+                distance = 0.5 * avgAcc * Bt* Bt;  // note: only valid for vertical descents with thrust oriented against gravity; would require vector sum of maxT, G to compute vector distance
             } while (Math.Abs(distance-oldD) > 0.1);
         }
 
