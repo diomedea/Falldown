@@ -147,20 +147,25 @@ namespace Fall
             double Thrust, maxT, maxFF = 0;
             GetAeroStats(Ship, out Thrust, out maxT, out maxFF, out CdS);
 
-            double Gg, Gz, D, Tv, avgAcc, oldD = 0;  // gravity at ground, gravity at altitude, air density, terminal velocity, previous distance
+            double Gg, Gz, D, Sv, Tv, avgAcc, oldD = 0;  // gravity at ground, gravity at altitude, air density, terminal velocity, previous distance
+            double Reynolds_Sv, Reynolds_Tv = 1.0;  // Reynolds numbers for the current and terminal speed
             Gg = gravity(body.gravParameter, body.Radius + LS.altitude);
             do
             {  /* with altitude, compute air density and gravity, then terminalVelocity; burntime is what required for forces on craft (thrust, drag, - gravity) to stop it.
                   at terminal velocity, drag deceleration = gravity; at 0 speed, drag deceleration is nil; drag +gravity can then be averaged as 1/2 gravity;
                   the integral of acceleration from drag (being it parabolic with speed^2) = 1/3 Gz* Bt (if at terminal velocity) (derives from http://www.intmath.com/blog/mathematics/archimedes-and-the-area-of-a-parabolic-segment-1652)
                   NOTE: vessel under drag and gravity accelerates towards the terminal velocity, but never reaches it! Therefore, drag deceleration != gravity and speed != terminalVelocity
+                  therefore, instead of drag acc = Gz, used drag acc = Gz *(Sv/Tv)^2*(Reynolds_Sv/Reynolds/Tv) (drag equation, for a same vessel at same air density, changes only by speed^2 and Reynolds number
                  */
+                Sv = Ship.srf_velocity.magnitude;
                 Gz = gravity(body.gravParameter, body.Radius + LS.altitude + distance);
                 D = density(body.GetPressure(LS.altitude + distance), body.GetTemperature(LS.altitude + distance) + atmTempOffset(), 
                     PhysicsGlobals.IdealGasConstant / body.atmosphereMolarMass);
-                Tv = Math.Sqrt(2 * (Ship.totalMass-maxFF*Bt) * Gg / (D * CdS));
-                avgAcc = maxT / 2 * (1 / Ship.totalMass + 1 / (Ship.totalMass - maxFF * Bt)) + Gz / 3 - (Gz + Gg) / 2;
-                Bt = Tv / avgAcc;
+                Tv = Math.Sqrt(2 * (Ship.totalMass - maxFF * Bt) * Gg / (D * CdS));
+                Reynolds_Sv = PhysicsGlobals.DragCurvePseudoReynolds.Evaluate((float)(D * Sv));
+                Reynolds_Tv = PhysicsGlobals.DragCurvePseudoReynolds.Evaluate((float)(D * Tv));
+                avgAcc = maxT / 2 * (1 / Ship.totalMass + 1 / (Ship.totalMass - maxFF * Bt)) + Gz*Sv*Sv*Reynolds_Sv/(Tv*Tv*Reynolds_Tv) / 3 - (Gz + Gg) / 2;
+                Bt = Sv / avgAcc;
                 oldD = distance;
                 distance = 0.5 * avgAcc * Bt* Bt;  // note: only valid for vertical descents with thrust oriented against gravity; would require vector sum of maxT, G to compute vector distance
             } while (Math.Abs(distance-oldD) > 0.1);
